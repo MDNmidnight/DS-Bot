@@ -8,12 +8,39 @@
 // refresh never turns into a spawn per minute.
 import { execFileSync, spawn } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 const CACHE_MS = 5 * 60_000
 const RETRY_MS = 60_000
 const REQUEST_TIMEOUT_MS = 25_000
 const WEEK_MINUTES = 10080
+
+// The Codex that the Codex subagent plugin runs is the npm package installed into the
+// DSH profile, and it shares the user's ~/.codex sign-in. Prefer that exact binary so
+// the plan figures come from the same Codex as the subagents.
+const NPM_CODEX_PACKAGES = [
+  ['codex-win32-x64', 'x86_64-pc-windows-msvc'],
+  ['codex-win32-arm64', 'aarch64-pc-windows-msvc'],
+]
+
+function npmCodex() {
+  const home = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+  const profiles = join(home, 'profiles')
+  let names
+  try {
+    names = readdirSync(profiles)
+  } catch {
+    return undefined
+  }
+  for (const profile of names) {
+    for (const [pkg, target] of NPM_CODEX_PACKAGES) {
+      const exe = join(profiles, profile, 'node_modules', '@openai', pkg, 'vendor', target, 'bin', 'codex.exe')
+      if (existsSync(exe)) return exe
+    }
+  }
+  return undefined
+}
 
 // The Store package keeps the executable under a versioned folder; the desktop app's
 // install is the fallback when the command is not on PATH (the desktop bridge's own
@@ -35,10 +62,12 @@ function storePackageCodex() {
   return undefined
 }
 
-// Read the Codex executable the same way the desktop bridge does: PATH first, then the
-// Microsoft Store package the desktop app installs from.
+// Read the Codex executable: the subagent plugin's own package first, then PATH, then
+// the Microsoft Store package the desktop app installs from.
 export function locateCodex(configured) {
   if (typeof configured === 'string' && configured !== '' && existsSync(configured)) return configured
+  const npm = npmCodex()
+  if (npm !== undefined) return npm
   for (const name of ['codex.exe', 'codex']) {
     try {
       const found = execFileSync('where', [name], { encoding: 'utf8', timeout: 5000 }).split(/\r?\n/)[0].trim()
