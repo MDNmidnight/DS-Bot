@@ -480,7 +480,7 @@ export function ChatView({ bot, room, header, onMissing }: { bot?: Bot; room?: R
                   if (y <= 80 && unreadBelow > 0) setUnreadBelow(0)
                 }}
                 scrollEventThrottle={100}
-                ListHeaderComponent={<Streaming key={sessionId} sessionId={sessionId} p={p} flat={flat} maxWidth={botMax} inRoom={inRoom} />}
+                ListHeaderComponent={<Streaming key={sessionId} sessionId={sessionId} running={running} p={p} flat={flat} maxWidth={botMax} inRoom={inRoom} />}
                 ListFooterComponent={loadingOlder ? <ActivityIndicator style={{ marginVertical: 12 }} color={p.ink3} /> : undefined}
               />}
         {empty && !gone ? <EmptyChat bot={bot} room={room} bots={team?.bots ?? []} p={p} dark={dark} /> : null}
@@ -654,9 +654,15 @@ function BlockedCard({ bot, p }: { bot: Bot; p: ReturnType<typeof useTheme>['p']
 // The turn being streamed by the model, per attempt id. It holds its own state so a
 // token redraws this one bubble, not the whole chat; the real item lands with the
 // 'message' event when the turn's text is saved.
-function Streaming({ sessionId, p, flat, maxWidth, inRoom }: { sessionId: string; p: ReturnType<typeof useTheme>['p']; flat: boolean; maxWidth: number; inRoom: boolean }) {
+function Streaming({ sessionId, running, p, flat, maxWidth, inRoom }: { sessionId: string; running: boolean; p: ReturnType<typeof useTheme>['p']; flat: boolean; maxWidth: number; inRoom: boolean }) {
   const { onFeed } = useTeam()
   const [text, setText] = useState('')
+  // A backgrounded or dropped feed never delivers the attempt's `end`, and a bubble left
+  // behind sits at the bottom of this inverted list for good, with every later message
+  // above it. The live turn is the authority: once it is over, nothing is still streaming.
+  useEffect(() => {
+    if (!running) setText('')
+  }, [running])
   useEffect(() => {
     if (onFeed === undefined) return
     const attempts = new Map<string, string>()

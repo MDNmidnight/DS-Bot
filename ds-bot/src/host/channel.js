@@ -910,10 +910,14 @@ export function install(rt) {
       ?? (room !== undefined ? rt.sessionOfRoom(room)
         : past !== undefined ? rt.sessionOfRoom(rt.roomOf(past.roomId)) : ref)
     await rt.ensureCapabilities(sessionId)
+    // A message typed while the Bot works cuts into the running turn at its next step,
+    // the way Enter does in the desktop window; an idle Bot starts a turn as usual.
+    // Queueing every send meant a phone message silently waited for the whole turn.
+    const mode = rt.live?.get(sessionId)?.turn !== undefined ? 'steer' : 'queue'
     await ctx.sessionController.prompt({
       requestId,
       sessionId,
-      mode: 'queue',
+      mode,
       content,
     }, AbortSignal.timeout(30_000))
   }
