@@ -442,10 +442,7 @@ export function ChatView({ bot, room, header, onMissing }: { bot?: Bot; room?: R
         {gone
           ? <Text style={[type.caption, { color: p.ink3, textAlign: 'center', marginTop: 24 }]}>{t('No messages yet')}</Text>
           : page === null && loadError !== null
-            ? <View style={{ alignItems: 'center', marginTop: 24 }}>
-                <Text style={[type.caption, { color: p.ink3, textAlign: 'center' }]}>{loadError}</Text>
-                <Text accessibilityRole="button" style={[type.caption, { color: p.accent, marginTop: 8 }]} onPress={() => { setLoadError(null); void refresh(generation.current) }}>{t('Retry')}</Text>
-              </View>
+            ? <LoadFailure message={loadError} p={p} onRetry={() => { setLoadError(null); void refresh(generation.current) }} />
           : page === null || chatWidth <= 0
             ? <ActivityIndicator style={styles.loading} color={p.accent} />
             : <FlatList
@@ -678,11 +675,32 @@ function Streaming({ sessionId, running, p, flat, maxWidth, inRoom }: { sessionI
   return text === '' ? null : <Item item={{ kind: 'bot', text }} p={p} flat={flat} maxWidth={maxWidth} inRoom={inRoom} sessionId={sessionId} />
 }
 
+// A chat that will not load used to show the harness's raw error string on the screen,
+// which says nothing a phone user can act on. Say what happened, keep the message behind
+// Details for whoever reports it, and leave the one useful action (Retry) in front.
+function LoadFailure({ message, p, onRetry }: { message: string; p: ReturnType<typeof useTheme>['p']; onRetry: () => void }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <View style={[styles.loadFail, { borderColor: p.line2, backgroundColor: p.card }]}>
+      <Text style={[type.settingsRow, { color: p.ink, textAlign: 'center' }]}>{t('This chat could not be loaded')}</Text>
+      <Text style={[type.caption, { color: p.ink3, textAlign: 'center', marginTop: 6 }]}>
+        {t('The computer could not read this chat\'s saved history. Retry; if it keeps failing, open the desktop window for the details.')}
+      </Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 18, marginTop: 12 }}>
+        <Text accessibilityRole="button" style={[type.small, { color: p.accent }]} onPress={onRetry}>{t('Retry')}</Text>
+        <Text accessibilityRole="button" style={[type.small, { color: p.ink3 }]} onPress={() => setOpen(!open)}>{open ? t('Hide details') : t('Details')}</Text>
+      </View>
+      {open ? <Text selectable style={[type.caption, { color: p.ink3, marginTop: 10 }]}>{message}</Text> : null}
+    </View>
+  )
+}
+
 const type = { caption: { fontSize: 12, lineHeight: 16 }, small: { fontSize: 13, lineHeight: 18 }, bubble: { fontSize: 16, lineHeight: 24 }, settingsRow: { fontSize: 16, lineHeight: 22 } }
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   loading: { flex: 1 },
   list: { flex: 1 },
+  loadFail: { marginTop: 24, marginHorizontal: 24, padding: 16, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth },
   listContent: { paddingVertical: 8, paddingHorizontal: 12 },
   reader: { flex: 1 },
   empty: { position: 'absolute', left: 24, right: 24, top: '28%', alignItems: 'center' },
