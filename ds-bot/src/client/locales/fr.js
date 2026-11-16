@@ -64,6 +64,7 @@ export const FR = {
   "Settings": "Paramètres",
   "Usage": "Utilisation",
   "Weekly": "Semaine",
+  "used": "utilisé",
   "Monthly": "Mois",
   "{time} left": "{time} restant",
   "Usage unavailable": "Utilisation indisponible",

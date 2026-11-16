@@ -64,6 +64,7 @@ export const JA = {
   "Settings": "設定",
   "Usage": "使用量",
   "Weekly": "週",
+  "used": "使用",
   "Monthly": "月",
   "{time} left": "残り {time}",
   "Usage unavailable": "使用量を取得できません",

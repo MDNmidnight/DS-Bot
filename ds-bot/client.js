@@ -187,6 +187,7 @@ var JA = {
   "Settings": "設定",
   "Usage": "使用量",
   "Weekly": "週",
+  "used": "使用",
   "Monthly": "月",
   "{time} left": "残り {time}",
   "Usage unavailable": "使用量を取得できません",
@@ -2609,6 +2610,7 @@ var KO = {
   Monthly: "월간",
   "{time} left": "{time} 남음",
   "Usage unavailable": "사용량을 가져올 수 없음",
+  used: "사용",
   "Codex usage": "Codex 사용량",
   "OpenCode usage": "OpenCode 사용량",
   Account: "계정",
@@ -5072,6 +5074,7 @@ var ES = {
   Monthly: "Mensual",
   "{time} left": "quedan {time}",
   "Usage unavailable": "Uso no disponible",
+  used: "usado",
   "Codex usage": "Uso de Codex",
   "OpenCode usage": "Uso de OpenCode",
   Account: "Cuenta",
@@ -7531,6 +7534,7 @@ var FR = {
   "Settings": "Paramètres",
   "Usage": "Utilisation",
   "Weekly": "Semaine",
+  "used": "utilisé",
   "Monthly": "Mois",
   "{time} left": "{time} restant",
   "Usage unavailable": "Utilisation indisponible",
@@ -9953,6 +9957,7 @@ var DE = {
   Monthly: "Monat",
   "{time} left": "noch {time}",
   "Usage unavailable": "Nutzung nicht verfügbar",
+  used: "genutzt",
   "Codex usage": "Codex-Nutzung",
   "OpenCode usage": "OpenCode-Nutzung",
   Account: "Konto",
@@ -12390,6 +12395,7 @@ var ZH = {
   Monthly: "月",
   "{time} left": "还有 {time}",
   "Usage unavailable": "用量暂不可用",
+  used: "已用",
   "Codex usage": "Codex 用量",
   "OpenCode usage": "OpenCode 用量",
   Account: "账户",
@@ -16071,13 +16077,13 @@ html[data-bt-collapsing] [class*="_frame"]:has(>[class*="_sidebarCol"]){transiti
 .bt-usage-rail{display:flex;flex-direction:column;align-items:center;gap:10px;padding:4px 0 2px}
 .bt-usage-mark{position:relative;display:inline-flex;align-items:center;gap:8px;border-radius:10px;outline:none}
 .bt-usage-mark:focus-visible{box-shadow:0 0 0 2px var(--bt-accent)}
-.bt-usage-rail .bt-usage-mark{width:36px;height:32px;justify-content:center;cursor:default}
-.bt-usage-ring{display:block}
+.bt-usage-rail .bt-usage-mark{width:36px;height:36px;justify-content:center;cursor:default}
+.bt-usage-ring{display:block;flex:none}
 .bt-usage-text{display:flex;flex-direction:column;line-height:1.25;min-width:0}
 .bt-usage-name{font-size:12px;font-weight:600;color:var(--bt-ink)}
 .bt-usage-detail{font-size:11px;color:var(--bt-ink-3);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bt-usage-nest{position:relative;display:block;line-height:0}
-.bt-usage-nest-ring{position:absolute;left:0;top:0;display:block}
+.bt-usage-nest{position:relative;display:block;line-height:0;flex:none}
+.bt-usage-nest-ring{position:absolute;left:0;top:0;width:100%;height:100%;display:block;line-height:0}
 .bt-usage-tip{position:fixed;z-index:60;min-width:196px;padding:9px 11px;border:1px solid var(--bt-line-2);border-radius:10px;background:var(--bt-main);box-shadow:0 10px 26px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:4px;pointer-events:none}
 .bt-usage-tip-row{display:grid;grid-template-columns:auto auto 1fr;gap:8px;align-items:baseline;font-size:11px;color:var(--bt-ink-3);white-space:nowrap}
 .bt-usage-tip-name{font-weight:600;color:var(--bt-ink)}
@@ -29248,11 +29254,12 @@ function planRows(payload, now = Date.now()) {
   }
   return rows2;
 }
-function Ring({ size, radius, percent: percent3, color, stroke }) {
+function Ring({ size, radius, percent: percent3, color, stroke, opacity }) {
   const center = size / 2;
   const width = stroke ?? Math.max(2, Math.round(size / 12));
   const circumference = 2 * Math.PI * radius;
-  const used = (percent3 ?? 0) / 100 * circumference;
+  const remaining = percent3 === void 0 ? 0 : Math.max(0, 100 - percent3);
+  const shown = remaining / 100 * circumference;
   const common = { cx: center, cy: center, r: radius, fill: "none", "stroke-width": width };
   return (0, import_react35.createElement)(
     "svg",
@@ -29261,21 +29268,20 @@ function Ring({ size, radius, percent: percent3, color, stroke }) {
     (0, import_react35.createElement)("circle", {
       ...common,
       stroke: color,
+      "stroke-opacity": opacity ?? 1,
       "stroke-linecap": "round",
-      "stroke-dasharray": `${used} ${circumference}`,
+      "stroke-dasharray": `${shown} ${circumference}`,
       transform: `rotate(-90 ${center} ${center})`
     })
   );
 }
 var CODEX_COLOR = "var(--bt-accent)";
-var OPENCODE_COLOR = "#1783ff";
-var OPENCODE_RINGS = [
-  { key: "rolling", radius: 13.5 },
-  { key: "weekly", radius: 10 },
-  { key: "monthly", radius: 6.5 }
-];
+var OPENCODE_COLOR = "var(--bt-accent)";
+var RAIL_STYLE = { size: 36, codexRadius: 15, codexStroke: 3, rings: [[15, 1], [11, 0.66], [7, 0.42]], ringStroke: 2.6 };
+var SIDE_STYLE = { size: 24, codexRadius: 9.6, codexStroke: 2.4, rings: [[9.6, 1], [7, 0.66], [4.4, 0.42]], ringStroke: 2 };
+var OPENCODE_KEYS = ["rolling", "weekly", "monthly"];
 function opencodeRingPercents(usage) {
-  return OPENCODE_RINGS.map((ring) => clamp(Number(usage?.[ring.key]?.percent)));
+  return OPENCODE_KEYS.map((key) => clamp(Number(usage?.[key]?.percent)));
 }
 function Tip({ tip }) {
   if (tip === null) return null;
@@ -29343,30 +29349,36 @@ function PlanUsage({ layout }) {
   const payload = usePlanUsage();
   const rows2 = planRows(payload);
   const { tip, show: show2, hide } = useTip(rows2);
+  const rail = layout === "rail";
+  const style = rail ? RAIL_STYLE : SIDE_STYLE;
   const codex = rows2.find((row) => row.id === "codex");
   const percents = opencodeRingPercents(payload.opencode);
-  const rail = layout === "rail";
-  const nest = (size, strokeScale) => (0, import_react35.createElement)("span", { className: "bt-usage-nest" }, OPENCODE_RINGS.map((ring, index) => (0, import_react35.createElement)(
+  const percentText2 = (value) => value === void 0 ? "—" : `${Math.round(value)}%`;
+  const nest = (0, import_react35.createElement)(
     "span",
-    { key: ring.key, className: "bt-usage-nest-ring" },
-    (0, import_react35.createElement)(Ring, { size, radius: ring.radius * strokeScale, percent: percents[index], color: OPENCODE_COLOR, stroke: rail ? 2.6 : 2 })
-  )));
-  const codexDetail = codex === void 0 ? "—" : `${Math.round(codex.percent ?? 0)}%`;
-  const opencodeDetail = OPENCODE_RINGS.map((ring, index) => {
-    const label = ring.key === "rolling" ? payload.opencode?.rollingWindow ?? "5h" : ring.key === "weekly" ? t("Weekly") : t("Monthly");
-    return `${label} ${percents[index] === void 0 ? "—" : `${Math.round(percents[index])}%`}`;
+    { className: "bt-usage-nest", style: { width: `${style.size}px`, height: `${style.size}px` } },
+    style.rings.map(([radius, opacity], index) => (0, import_react35.createElement)(
+      "span",
+      { key: OPENCODE_KEYS[index], className: "bt-usage-nest-ring" },
+      (0, import_react35.createElement)(Ring, { size: style.size, radius, percent: percents[index], color: OPENCODE_COLOR, stroke: style.ringStroke, opacity })
+    ))
+  );
+  const codexDetail = codex === void 0 ? "—" : `${percentText2(codex.percent)} ${t("used")}`;
+  const opencodeDetail = OPENCODE_KEYS.map((key, index) => {
+    const label = key === "rolling" ? payload.opencode?.rollingWindow ?? "5h" : key === "weekly" ? t("Weekly") : t("Monthly");
+    return `${label} ${percentText2(percents[index])}`;
   }).join(" · ");
   const codexMark = (0, import_react35.createElement)(
     "div",
     { className: "bt-usage-mark", onMouseEnter: show2, onMouseLeave: hide, tabIndex: 0, "aria-label": t("Codex usage") },
-    (0, import_react35.createElement)(Ring, { size: rail ? 30 : 22, radius: rail ? 12 : 8.5, percent: codex?.percent, color: CODEX_COLOR }),
+    (0, import_react35.createElement)(Ring, { size: style.size, radius: style.codexRadius, percent: codex?.percent, color: CODEX_COLOR, stroke: style.codexStroke }),
     rail ? null : (0, import_react35.createElement)("span", { className: "bt-usage-text" }, (0, import_react35.createElement)("span", { className: "bt-usage-name" }, "Codex"), (0, import_react35.createElement)("span", { className: "bt-usage-detail" }, codexDetail))
   );
   const showOpencode = rail || payload.opencode !== void 0;
   const opencodeMark = showOpencode ? (0, import_react35.createElement)(
     "div",
     { className: "bt-usage-mark", onMouseEnter: show2, onMouseLeave: hide, tabIndex: 0, "aria-label": t("OpenCode usage") },
-    nest(rail ? 30 : 22, rail ? 1 : 0.73),
+    nest,
     rail ? null : (0, import_react35.createElement)("span", { className: "bt-usage-text" }, (0, import_react35.createElement)("span", { className: "bt-usage-name" }, "OpenCode"), (0, import_react35.createElement)("span", { className: "bt-usage-detail" }, opencodeDetail))
   ) : null;
   return (0, import_react35.createElement)(

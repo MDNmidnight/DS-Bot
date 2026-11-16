@@ -64,7 +64,7 @@ export const DE = {
   'Lively': 'Lebhaft',
   Settings: 'Einstellungen',
   Usage: 'Nutzung',
-  Weekly: 'Woche', Monthly: 'Monat', '{time} left': 'noch {time}', 'Usage unavailable': 'Nutzung nicht verfügbar',
+  Weekly: 'Woche', Monthly: 'Monat', '{time} left': 'noch {time}', 'Usage unavailable': 'Nutzung nicht verfügbar', used: 'genutzt',
   'Codex usage': 'Codex-Nutzung', 'OpenCode usage': 'OpenCode-Nutzung',
   Account: 'Konto',
   Cancel: 'Abbrechen',

@@ -64,7 +64,7 @@ export const ES = {
   'Lively': 'Animada',
   Settings: 'Ajustes',
   Usage: 'Uso',
-  Weekly: 'Semanal', Monthly: 'Mensual', '{time} left': 'quedan {time}', 'Usage unavailable': 'Uso no disponible',
+  Weekly: 'Semanal', Monthly: 'Mensual', '{time} left': 'quedan {time}', 'Usage unavailable': 'Uso no disponible', used: 'usado',
   'Codex usage': 'Uso de Codex', 'OpenCode usage': 'Uso de OpenCode',
   Account: 'Cuenta',
   Cancel: 'Cancelar',

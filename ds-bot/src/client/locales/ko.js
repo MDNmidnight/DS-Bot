@@ -64,7 +64,7 @@ export const KO = {
   'Lively': '활발함',
   Settings: '설정',
   Usage: '사용량',
-  Weekly: '주간', Monthly: '월간', '{time} left': '{time} 남음', 'Usage unavailable': '사용량을 가져올 수 없음',
+  Weekly: '주간', Monthly: '월간', '{time} left': '{time} 남음', 'Usage unavailable': '사용량을 가져올 수 없음', used: '사용',
   'Codex usage': 'Codex 사용량', 'OpenCode usage': 'OpenCode 사용량',
   Account: '계정',
   Cancel: '취소',

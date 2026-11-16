@@ -52,33 +52,38 @@ export function planRows(payload, now = Date.now()) {
   return rows
 }
 
-function Ring({ size, radius, percent, color, stroke }) {
+function Ring({ size, radius, percent, color, stroke, opacity }) {
   const center = size / 2
   const width = stroke ?? Math.max(2, Math.round(size / 12))
   const circumference = 2 * Math.PI * radius
-  const used = ((percent ?? 0) / 100) * circumference
+  // A plan starts full and this ring shows what is left, so a fresh window is a closed
+  // circle and a spent one is empty. The percentage beside it is the used share.
+  const remaining = percent === undefined ? 0 : Math.max(0, 100 - percent)
+  const shown = (remaining / 100) * circumference
   const common = { cx: center, cy: center, r: radius, fill: 'none', 'stroke-width': width }
   return h('svg', { width: size, height: size, viewBox: `0 0 ${size} ${size}`, 'aria-hidden': true, className: 'bt-usage-ring' },
     h('circle', { ...common, stroke: 'var(--bt-line)' }),
     h('circle', {
       ...common,
       stroke: color,
+      'stroke-opacity': opacity ?? 1,
       'stroke-linecap': 'round',
-      'stroke-dasharray': `${used} ${circumference}`,
+      'stroke-dasharray': `${shown} ${circumference}`,
       transform: `rotate(-90 ${center} ${center})`,
     }))
 }
 
 const CODEX_COLOR = 'var(--bt-accent)'
-const OPENCODE_COLOR = '#1783ff'
-const OPENCODE_RINGS = [
-  { key: 'rolling', radius: 13.5 },
-  { key: 'weekly', radius: 10 },
-  { key: 'monthly', radius: 6.5 },
-]
+const OPENCODE_COLOR = 'var(--bt-accent)'
+// Both marks are the same box as the rail's round buttons, so the rings line up with
+// them instead of drifting left. OpenCode's three windows are the same circle at three
+// radii, told apart by opacity rather than by a second color.
+const RAIL_STYLE = { size: 36, codexRadius: 15, codexStroke: 3, rings: [[15, 1], [11, 0.66], [7, 0.42]], ringStroke: 2.6 }
+const SIDE_STYLE = { size: 24, codexRadius: 9.6, codexStroke: 2.4, rings: [[9.6, 1], [7, 0.66], [4.4, 0.42]], ringStroke: 2 }
+const OPENCODE_KEYS = ['rolling', 'weekly', 'monthly']
 
 function opencodeRingPercents(usage) {
-  return OPENCODE_RINGS.map(ring => clamp(Number(usage?.[ring.key]?.percent)))
+  return OPENCODE_KEYS.map(key => clamp(Number(usage?.[key]?.percent)))
 }
 
 function Tip({ tip }) {
@@ -151,23 +156,26 @@ export function PlanUsage({ layout }) {
   const payload = usePlanUsage()
   const rows = planRows(payload)
   const { tip, show, hide } = useTip(rows)
+  const rail = layout === 'rail'
+  const style = rail ? RAIL_STYLE : SIDE_STYLE
   const codex = rows.find(row => row.id === 'codex')
   const percents = opencodeRingPercents(payload.opencode)
-  const rail = layout === 'rail'
-  const nest = (size, strokeScale) => h('span', { className: 'bt-usage-nest' }, OPENCODE_RINGS.map((ring, index) => h('span', { key: ring.key, className: 'bt-usage-nest-ring' },
-    h(Ring, { size, radius: ring.radius * strokeScale, percent: percents[index], color: OPENCODE_COLOR, stroke: rail ? 2.6 : 2 }))))
-  const codexDetail = codex === undefined ? '—' : `${Math.round(codex.percent ?? 0)}%`
-  const opencodeDetail = OPENCODE_RINGS.map((ring, index) => {
-    const label = ring.key === 'rolling' ? (payload.opencode?.rollingWindow ?? '5h') : ring.key === 'weekly' ? t('Weekly') : t('Monthly')
-    return `${label} ${percents[index] === undefined ? '—' : `${Math.round(percents[index])}%`}`
+  const percentText = value => (value === undefined ? '—' : `${Math.round(value)}%`)
+  const nest = h('span', { className: 'bt-usage-nest', style: { width: `${style.size}px`, height: `${style.size}px` } },
+    style.rings.map(([radius, opacity], index) => h('span', { key: OPENCODE_KEYS[index], className: 'bt-usage-nest-ring' },
+      h(Ring, { size: style.size, radius, percent: percents[index], color: OPENCODE_COLOR, stroke: style.ringStroke, opacity }))))
+  const codexDetail = codex === undefined ? '—' : `${percentText(codex.percent)} ${t('used')}`
+  const opencodeDetail = OPENCODE_KEYS.map((key, index) => {
+    const label = key === 'rolling' ? (payload.opencode?.rollingWindow ?? '5h') : key === 'weekly' ? t('Weekly') : t('Monthly')
+    return `${label} ${percentText(percents[index])}`
   }).join(' · ')
   const codexMark = h('div', { className: 'bt-usage-mark', onMouseEnter: show, onMouseLeave: hide, tabIndex: 0, 'aria-label': t('Codex usage') },
-    h(Ring, { size: rail ? 30 : 22, radius: rail ? 12 : 8.5, percent: codex?.percent, color: CODEX_COLOR }),
+    h(Ring, { size: style.size, radius: style.codexRadius, percent: codex?.percent, color: CODEX_COLOR, stroke: style.codexStroke }),
     rail ? null : h('span', { className: 'bt-usage-text' }, h('span', { className: 'bt-usage-name' }, 'Codex'), h('span', { className: 'bt-usage-detail' }, codexDetail)))
   const showOpencode = rail || payload.opencode !== undefined
   const opencodeMark = showOpencode
     ? h('div', { className: 'bt-usage-mark', onMouseEnter: show, onMouseLeave: hide, tabIndex: 0, 'aria-label': t('OpenCode usage') },
-        nest(rail ? 30 : 22, rail ? 1 : 0.73),
+        nest,
         rail ? null : h('span', { className: 'bt-usage-text' }, h('span', { className: 'bt-usage-name' }, 'OpenCode'), h('span', { className: 'bt-usage-detail' }, opencodeDetail)))
     : null
   return h('div', { className: 'bt-usage-wrap' },
