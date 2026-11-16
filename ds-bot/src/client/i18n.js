@@ -47,6 +47,8 @@ const ZH = {
   'Lively': '活泼',
   Settings: '设置',
   Usage: '用量',
+  Weekly: '周', Monthly: '月', '{time} left': '还有 {time}', 'Usage unavailable': '用量暂不可用',
+  'Codex usage': 'Codex 用量', 'OpenCode usage': 'OpenCode 用量',
   Account: '账户',
   Cancel: '取消',
   Delete: '删除',
