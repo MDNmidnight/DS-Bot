@@ -16084,11 +16084,15 @@ html[data-bt-collapsing] [class*="_frame"]:has(>[class*="_sidebarCol"]){transiti
 .bt-usage-detail{font-size:11px;color:var(--bt-ink-3);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bt-usage-nest{position:relative;display:block;line-height:0;flex:none}
 .bt-usage-nest-ring{position:absolute;left:0;top:0;width:100%;height:100%;display:block;line-height:0}
-.bt-usage-tip{position:fixed;z-index:60;min-width:196px;padding:9px 11px;border:1px solid var(--bt-line-2);border-radius:10px;background:var(--bt-main);box-shadow:0 10px 26px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:4px;pointer-events:none}
-.bt-usage-tip-row{display:grid;grid-template-columns:auto auto 1fr;gap:8px;align-items:baseline;font-size:11px;color:var(--bt-ink-3);white-space:nowrap}
-.bt-usage-tip-name{font-weight:600;color:var(--bt-ink)}
-.bt-usage-tip-pct{margin-left:auto;color:var(--bt-ink);font-variant-numeric:tabular-nums;text-align:right}
-.bt-usage-tip-reset{grid-column:1/-1;color:var(--bt-ink-3)}
+.bt-usage-tip{position:fixed;z-index:60;min-width:212px;padding:10px 12px;border:1px solid var(--bt-line-2);border-radius:10px;background:var(--bt-main);box-shadow:0 10px 26px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.bt-usage-tip-head{font-size:12px;font-weight:600;color:var(--bt-ink);line-height:1.2}
+.bt-usage-tip-item{display:flex;flex-direction:column;gap:2px}
+.bt-usage-tip-row{display:flex;align-items:center;gap:8px}
+.bt-usage-tip-window{font-size:11px;color:var(--bt-ink-3);min-width:26px;white-space:nowrap}
+.bt-usage-tip-bar{position:relative;flex:1 1 auto;height:4px;min-width:64px;border-radius:2px;background:var(--bt-line);overflow:hidden}
+.bt-usage-tip-fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--bt-accent)}
+.bt-usage-tip-pct{font-size:11px;color:var(--bt-ink);font-variant-numeric:tabular-nums;min-width:34px;text-align:right;white-space:nowrap}
+.bt-usage-tip-reset{font-size:10px;color:var(--bt-ink-3);margin-left:34px;white-space:nowrap}
 .bt-rail{align-items:center;gap:6px;padding:0}
 .bt-rail .bt-row{justify-content:center;width:56px;height:56px;min-height:56px;padding:0;border-radius:16px}
 .bt-rail-top{display:flex;flex-direction:column;align-items:center;gap:8px;padding-bottom:8px}
@@ -29285,18 +29289,28 @@ function opencodeRingPercents(usage) {
 }
 function Tip({ tip }) {
   if (tip === null) return null;
+  const rows2 = tip.rows;
   return (0, import_react35.createElement)(
     "div",
     { className: "bt-usage-tip", style: { left: `${tip.x}px`, top: `${tip.y}px` }, role: "tooltip" },
-    tip.rows.map((row) => (0, import_react35.createElement)(
+    (0, import_react35.createElement)("div", { className: "bt-usage-tip-head" }, tip.title),
+    rows2.length === 0 ? (0, import_react35.createElement)("div", { className: "bt-usage-tip-reset" }, t("Usage unavailable")) : null,
+    rows2.map((row) => (0, import_react35.createElement)(
       "div",
-      { key: row.id, className: "bt-usage-tip-row" },
-      (0, import_react35.createElement)("span", { className: "bt-usage-tip-name" }, row.name),
-      (0, import_react35.createElement)("span", { className: "bt-usage-tip-window" }, row.window),
-      (0, import_react35.createElement)("span", { className: "bt-usage-tip-pct" }, row.percent === void 0 ? "—" : `${Math.round(row.percent)}%`),
-      row.reset === "" ? null : (0, import_react35.createElement)("span", { className: "bt-usage-tip-reset" }, t("{time} left", { time: row.reset }))
-    )),
-    tip.rows.length === 0 ? (0, import_react35.createElement)("div", { className: "bt-usage-tip-row" }, t("Usage unavailable")) : null
+      { key: row.id, className: "bt-usage-tip-item" },
+      (0, import_react35.createElement)(
+        "div",
+        { className: "bt-usage-tip-row" },
+        (0, import_react35.createElement)("span", { className: "bt-usage-tip-window" }, row.window),
+        (0, import_react35.createElement)(
+          "span",
+          { className: "bt-usage-tip-bar" },
+          (0, import_react35.createElement)("span", { className: "bt-usage-tip-fill", style: { width: `${row.percent === void 0 ? 0 : Math.max(0, 100 - row.percent)}%` } })
+        ),
+        (0, import_react35.createElement)("span", { className: "bt-usage-tip-pct" }, row.percent === void 0 ? "—" : `${Math.round(row.percent)}%`)
+      ),
+      row.reset === "" ? null : (0, import_react35.createElement)("div", { className: "bt-usage-tip-reset" }, t("{time} left", { time: row.reset }))
+    ))
   );
 }
 function usePlanUsage() {
@@ -29336,11 +29350,11 @@ async function readOpencode() {
     return void 0;
   }
 }
-function useTip(rows2) {
+function useTip() {
   const [tip, setTip] = (0, import_react35.useState)(null);
-  const show2 = (event) => {
+  const show2 = (title, rows2) => (event) => {
     const box = event.currentTarget.getBoundingClientRect();
-    setTip({ x: Math.round(box.right + 10), y: Math.round(box.top - 4), rows: rows2 });
+    setTip({ x: Math.round(box.right + 10), y: Math.round(box.top - 4), title, rows: rows2 });
   };
   const hide = () => setTip(null);
   return { tip, show: show2, hide };
@@ -29348,10 +29362,12 @@ function useTip(rows2) {
 function PlanUsage({ layout }) {
   const payload = usePlanUsage();
   const rows2 = planRows(payload);
-  const { tip, show: show2, hide } = useTip(rows2);
+  const { tip, show: show2, hide } = useTip();
   const rail = layout === "rail";
   const style = rail ? RAIL_STYLE : SIDE_STYLE;
-  const codex = rows2.find((row) => row.id === "codex");
+  const codexRows = rows2.filter((row) => row.id === "codex");
+  const opencodeRows = rows2.filter((row) => row.id.startsWith("opencode"));
+  const codex = codexRows[0];
   const percents = opencodeRingPercents(payload.opencode);
   const percentText2 = (value) => value === void 0 ? "—" : `${Math.round(value)}%`;
   const nest = (0, import_react35.createElement)(
@@ -29370,14 +29386,14 @@ function PlanUsage({ layout }) {
   }).join(" · ");
   const codexMark = (0, import_react35.createElement)(
     "div",
-    { className: "bt-usage-mark", onMouseEnter: show2, onMouseLeave: hide, tabIndex: 0, "aria-label": t("Codex usage") },
+    { className: "bt-usage-mark", onMouseEnter: show2("Codex", codexRows), onMouseLeave: hide, tabIndex: 0, "aria-label": t("Codex usage") },
     (0, import_react35.createElement)(Ring, { size: style.size, radius: style.codexRadius, percent: codex?.percent, color: CODEX_COLOR, stroke: style.codexStroke }),
     rail ? null : (0, import_react35.createElement)("span", { className: "bt-usage-text" }, (0, import_react35.createElement)("span", { className: "bt-usage-name" }, "Codex"), (0, import_react35.createElement)("span", { className: "bt-usage-detail" }, codexDetail))
   );
   const showOpencode = rail || payload.opencode !== void 0;
   const opencodeMark = showOpencode ? (0, import_react35.createElement)(
     "div",
-    { className: "bt-usage-mark", onMouseEnter: show2, onMouseLeave: hide, tabIndex: 0, "aria-label": t("OpenCode usage") },
+    { className: "bt-usage-mark", onMouseEnter: show2("OpenCode", opencodeRows), onMouseLeave: hide, tabIndex: 0, "aria-label": t("OpenCode usage") },
     nest,
     rail ? null : (0, import_react35.createElement)("span", { className: "bt-usage-text" }, (0, import_react35.createElement)("span", { className: "bt-usage-name" }, "OpenCode"), (0, import_react35.createElement)("span", { className: "bt-usage-detail" }, opencodeDetail))
   ) : null;

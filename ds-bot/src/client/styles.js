@@ -187,11 +187,15 @@ html[data-bt-collapsing] [class*="_frame"]:has(>[class*="_sidebarCol"]){transiti
 .bt-usage-detail{font-size:11px;color:var(--bt-ink-3);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bt-usage-nest{position:relative;display:block;line-height:0;flex:none}
 .bt-usage-nest-ring{position:absolute;left:0;top:0;width:100%;height:100%;display:block;line-height:0}
-.bt-usage-tip{position:fixed;z-index:60;min-width:196px;padding:9px 11px;border:1px solid var(--bt-line-2);border-radius:10px;background:var(--bt-main);box-shadow:0 10px 26px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:4px;pointer-events:none}
-.bt-usage-tip-row{display:grid;grid-template-columns:auto auto 1fr;gap:8px;align-items:baseline;font-size:11px;color:var(--bt-ink-3);white-space:nowrap}
-.bt-usage-tip-name{font-weight:600;color:var(--bt-ink)}
-.bt-usage-tip-pct{margin-left:auto;color:var(--bt-ink);font-variant-numeric:tabular-nums;text-align:right}
-.bt-usage-tip-reset{grid-column:1/-1;color:var(--bt-ink-3)}
+.bt-usage-tip{position:fixed;z-index:60;min-width:212px;padding:10px 12px;border:1px solid var(--bt-line-2);border-radius:10px;background:var(--bt-main);box-shadow:0 10px 26px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.bt-usage-tip-head{font-size:12px;font-weight:600;color:var(--bt-ink);line-height:1.2}
+.bt-usage-tip-item{display:flex;flex-direction:column;gap:2px}
+.bt-usage-tip-row{display:flex;align-items:center;gap:8px}
+.bt-usage-tip-window{font-size:11px;color:var(--bt-ink-3);min-width:26px;white-space:nowrap}
+.bt-usage-tip-bar{position:relative;flex:1 1 auto;height:4px;min-width:64px;border-radius:2px;background:var(--bt-line);overflow:hidden}
+.bt-usage-tip-fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--bt-accent)}
+.bt-usage-tip-pct{font-size:11px;color:var(--bt-ink);font-variant-numeric:tabular-nums;min-width:34px;text-align:right;white-space:nowrap}
+.bt-usage-tip-reset{font-size:10px;color:var(--bt-ink-3);margin-left:34px;white-space:nowrap}
 .bt-rail{align-items:center;gap:6px;padding:0}
 .bt-rail .bt-row{justify-content:center;width:56px;height:56px;min-height:56px;padding:0;border-radius:16px}
 .bt-rail-top{display:flex;flex-direction:column;align-items:center;gap:8px;padding-bottom:8px}

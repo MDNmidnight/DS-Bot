@@ -86,15 +86,22 @@ function opencodeRingPercents(usage) {
   return OPENCODE_KEYS.map(key => clamp(Number(usage?.[key]?.percent)))
 }
 
+// One line per window: its label, a bar that drains with the plan, the used percentage,
+// then the reset countdown underneath. Bars and rings tell the same story (what is
+// left), so a nearly full bar always means "barely used".
 function Tip({ tip }) {
   if (tip === null) return null
+  const rows = tip.rows
   return h('div', { className: 'bt-usage-tip', style: { left: `${tip.x}px`, top: `${tip.y}px` }, role: 'tooltip' },
-    tip.rows.map(row => h('div', { key: row.id, className: 'bt-usage-tip-row' },
-      h('span', { className: 'bt-usage-tip-name' }, row.name),
-      h('span', { className: 'bt-usage-tip-window' }, row.window),
-      h('span', { className: 'bt-usage-tip-pct' }, row.percent === undefined ? '—' : `${Math.round(row.percent)}%`),
-      row.reset === '' ? null : h('span', { className: 'bt-usage-tip-reset' }, t('{time} left', { time: row.reset })))),
-    tip.rows.length === 0 ? h('div', { className: 'bt-usage-tip-row' }, t('Usage unavailable')) : null)
+    h('div', { className: 'bt-usage-tip-head' }, tip.title),
+    rows.length === 0 ? h('div', { className: 'bt-usage-tip-reset' }, t('Usage unavailable')) : null,
+    rows.map(row => h('div', { key: row.id, className: 'bt-usage-tip-item' },
+      h('div', { className: 'bt-usage-tip-row' },
+        h('span', { className: 'bt-usage-tip-window' }, row.window),
+        h('span', { className: 'bt-usage-tip-bar' },
+          h('span', { className: 'bt-usage-tip-fill', style: { width: `${row.percent === undefined ? 0 : Math.max(0, 100 - row.percent)}%` } })),
+        h('span', { className: 'bt-usage-tip-pct' }, row.percent === undefined ? '—' : `${Math.round(row.percent)}%`)),
+      row.reset === '' ? null : h('div', { className: 'bt-usage-tip-reset' }, t('{time} left', { time: row.reset })))))
 }
 
 function usePlanUsage() {
@@ -138,11 +145,13 @@ async function readOpencode() {
   }
 }
 
-function useTip(rows) {
+// Each mark carries its own title and rows: a hover on Codex must never list OpenCode's
+// windows.
+function useTip() {
   const [tip, setTip] = useState(null)
-  const show = (event) => {
+  const show = (title, rows) => event => {
     const box = event.currentTarget.getBoundingClientRect()
-    setTip({ x: Math.round(box.right + 10), y: Math.round(box.top - 4), rows })
+    setTip({ x: Math.round(box.right + 10), y: Math.round(box.top - 4), title, rows })
   }
   const hide = () => setTip(null)
   return { tip, show, hide }
@@ -155,10 +164,12 @@ function useTip(rows) {
 export function PlanUsage({ layout }) {
   const payload = usePlanUsage()
   const rows = planRows(payload)
-  const { tip, show, hide } = useTip(rows)
+  const { tip, show, hide } = useTip()
   const rail = layout === 'rail'
   const style = rail ? RAIL_STYLE : SIDE_STYLE
-  const codex = rows.find(row => row.id === 'codex')
+  const codexRows = rows.filter(row => row.id === 'codex')
+  const opencodeRows = rows.filter(row => row.id.startsWith('opencode'))
+  const codex = codexRows[0]
   const percents = opencodeRingPercents(payload.opencode)
   const percentText = value => (value === undefined ? '—' : `${Math.round(value)}%`)
   const nest = h('span', { className: 'bt-usage-nest', style: { width: `${style.size}px`, height: `${style.size}px` } },
@@ -169,12 +180,12 @@ export function PlanUsage({ layout }) {
     const label = key === 'rolling' ? (payload.opencode?.rollingWindow ?? '5h') : key === 'weekly' ? t('Weekly') : t('Monthly')
     return `${label} ${percentText(percents[index])}`
   }).join(' · ')
-  const codexMark = h('div', { className: 'bt-usage-mark', onMouseEnter: show, onMouseLeave: hide, tabIndex: 0, 'aria-label': t('Codex usage') },
+  const codexMark = h('div', { className: 'bt-usage-mark', onMouseEnter: show('Codex', codexRows), onMouseLeave: hide, tabIndex: 0, 'aria-label': t('Codex usage') },
     h(Ring, { size: style.size, radius: style.codexRadius, percent: codex?.percent, color: CODEX_COLOR, stroke: style.codexStroke }),
     rail ? null : h('span', { className: 'bt-usage-text' }, h('span', { className: 'bt-usage-name' }, 'Codex'), h('span', { className: 'bt-usage-detail' }, codexDetail)))
   const showOpencode = rail || payload.opencode !== undefined
   const opencodeMark = showOpencode
-    ? h('div', { className: 'bt-usage-mark', onMouseEnter: show, onMouseLeave: hide, tabIndex: 0, 'aria-label': t('OpenCode usage') },
+    ? h('div', { className: 'bt-usage-mark', onMouseEnter: show('OpenCode', opencodeRows), onMouseLeave: hide, tabIndex: 0, 'aria-label': t('OpenCode usage') },
         nest,
         rail ? null : h('span', { className: 'bt-usage-text' }, h('span', { className: 'bt-usage-name' }, 'OpenCode'), h('span', { className: 'bt-usage-detail' }, opencodeDetail)))
     : null
