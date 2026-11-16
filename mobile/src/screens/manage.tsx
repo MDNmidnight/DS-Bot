@@ -20,9 +20,17 @@ import { inkColor, radius, shadow, type as typeScale, useTheme, type Palette } f
 import type { Bot, Room, TeamState } from '../connection.ts'
 import { capabilityStatusText } from '../team/capabilities.ts'
 import { ModelMenu, ModelPicker } from './model-menu.tsx'
+import { CHARACTER_COLORS, PICKER_COLUMNS, PICKER_SHAPES } from '../../../ds-bot/src/client/characters.js'
 
-export const SHAPES = ['acorn', 'berry', 'bunny', 'gem', 'gumdrop', 'kitty', 'moon', 'peanut', 'star', 'wave']
-export const COLORS = ['black', 'brown', 'red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'violet', 'magenta', 'gray', 'aurora']
+// The same table the desktop picker draws, so a shape added to characters.js (or a
+// plugin's own shape) is on offer here too, and a Bot's stored look never falls back
+// to another shape just because this list was written out by hand.
+export const SHAPES = PICKER_SHAPES
+export const COLORS = CHARACTER_COLORS
+
+// A Bot may keep a shape that is not in the shared table (a plugin's, or one from a
+// newer build). The desktop picker appends it so it stays visible and selected.
+const shapeChoices = (current?: string): string[] => (current !== undefined && current !== '' && !SHAPES.includes(current) ? [...SHAPES, current] : SHAPES)
 
 export const pickPhoto = async (): Promise<string | null> => {
   const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8, base64: true })
@@ -416,7 +424,7 @@ export function BotEdit({ route, navigation }: any) {
           <Field label={t('Label')} value={bot.role} placeholder={t('Research, admin…')} onSave={role => save({ role })} />
         </Section>
         <Section label={t('Character shape')}>
-          <PickGrid columns={5} ids={SHAPES} picked={shape} onPick={id => save({ avatar: { ...bot.avatar, shape: id } })}
+          <PickGrid columns={PICKER_COLUMNS} ids={shapeChoices(bot.avatar?.shape)} picked={shape} onPick={id => save({ avatar: { ...bot.avatar, shape: id } })}
             draw={(id, size) => <Avatar bot={{ ...bot, avatar: { ...bot.avatar, shape: id }, color } as Bot} dark={dark} size={size * 0.72} ring={p.card} />} />
         </Section>
         <Section label={t('Character color')}>
@@ -511,7 +519,7 @@ export function NewBot({ navigation }: any) {
           {clash ? <Text style={[typeScale.small, { color: p.danger, paddingHorizontal: 16, paddingBottom: 10 }]}>{t('Another Bot has this name.')}</Text> : null}
         </Section>
         <Section label={t('Character shape')}>
-          <PickGrid columns={5} ids={SHAPES} picked={shape} onPick={setShape}
+          <PickGrid columns={PICKER_COLUMNS} ids={shapeChoices(shape)} picked={shape} onPick={setShape}
             draw={(id, size) => <Avatar bot={{ id: '', name: finalName, avatar: { shape: id }, color } as Bot} dark={dark} size={size * 0.72} ring={p.card} />} />
         </Section>
         <Section label={t('Character color')}>

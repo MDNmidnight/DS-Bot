@@ -641,6 +641,7 @@ export const JA = {
   "Cushion": "クッション",
   "Ring": "リング",
   "Gem": "宝石",
+  "Round ball": "ボール",
   "Black": "ブラック",
   "Brown": "ブラウン",
   "Red": "レッド",

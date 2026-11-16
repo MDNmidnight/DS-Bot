@@ -649,7 +649,7 @@ export const KO = {
   Whale: '고래', Star: '별', Moon: '달', Wave: '파동', Squircle: '둥근 사각형', Bull: '뿔', Blossom: '꽃',
   Gumdrop: '젤리', Peanut: '땅콩', Bubbles: '거품', Saucer: '비행접시', Sprout: '새싹', Bunny: '토끼',
   Kitty: '고양이', Beacon: '등대', Plus: '플러스', Magnet: '자석', Acorn: '도토리', Pebbles: '조약돌', Cushion: '쿠션',
-  Ring: '링', Gem: '보석',
+  Ring: '링', Gem: '보석', 'Round ball': '공',
 
   // Colors
   Black: '검정', Brown: '갈색', Red: '빨강', Orange: '주황', Yellow: '노랑', Green: '초록', Cyan: '청록', Blue: '파랑',

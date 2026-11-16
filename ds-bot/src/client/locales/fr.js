@@ -641,6 +641,7 @@ export const FR = {
   "Cushion": "Coussin",
   "Ring": "Anneau",
   "Gem": "Gemme",
+  "Round ball": "Boule",
   "Black": "Noir",
   "Brown": "Marron",
   "Red": "Rouge",
