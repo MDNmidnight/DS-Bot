@@ -23,6 +23,7 @@ const MOBILE_ZH: Record<string, string> = {
   'This chat could not be loaded': '这个会话没能加载',
   'The computer could not read this chat\'s saved history. Retry; if it keeps failing, open the desktop window for the details.': '电脑读取这个会话的历史失败了。可以先重试；一直失败就用桌面窗口看详情。',
   'Hide details': '收起详情',
+  'The message was not sent. Check the connection, then tap it to retry.': '消息没发出去。检查网络后再点它重试。',
   'Add photos': '添加照片', 'Not sent. Tap to retry': '未发出，点按重试', 'Latest messages': '最新消息', 'Forget {name}?': '忘记 {name}？', 'Clear diagnostics?': '清空诊断记录？',
   'Pick at least two Bots. The admin leads the group.': '至少选两个 Bot，管理员带领这个群。', 'Reconnecting…': '正在重新连接…',
   'A photo did not arrive. Send it again.': '有张照片没传到，请重新发送。', 'This is not a photo DS Bot can send': '这不是 DS Bot 能发送的照片',

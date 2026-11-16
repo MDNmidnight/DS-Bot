@@ -10,6 +10,7 @@ import { createChatCache } from '../team/chat-cache.ts'
 import { connectorCanConnectOnMobile } from '../team/connectors.ts'
 import { useTeam } from '../team/context.tsx'
 import { markSeen } from '../team/seen.ts'
+import { withRetry } from '../team/send-retry.ts'
 import { messageClock, t } from '../ui/i18n.ts'
 import { ErrorBoundary } from '../ui/error-boundary.tsx'
 import { shadow, useTheme } from '../ui/tokens.ts'
@@ -80,7 +81,7 @@ export function prefetchChat(call: (endpoint: string, payload?: unknown) => Prom
 
 // Messages the phone sent that the chat has not shown back yet, per chat. They live
 // outside the screen so a send keeps going, and stays visible, across chat switches.
-interface Outgoing { item: ChatItem; photos: Photo[]; sessionId: string; known?: Set<string> }
+interface Outgoing { item: ChatItem; photos: Photo[]; sessionId: string; requestId: string; known?: Set<string> }
 const outbox = new Map<string, Outgoing[]>()
 const outboxListeners = new Set<() => void>()
 const EMPTY: Outgoing[] = []
@@ -361,8 +362,9 @@ export function ChatView({ bot, room, header, onMissing }: { bot?: Bot; room?: R
     mark('sending')
     try {
       const images: string[] = []
-      for (const photo of entry.photos) images.push(((await call('stage-image', { mediaType: photo.mediaType, data: photo.data })) as { id: string }).id)
-      await call('send', { sessionId: entry.sessionId, text: entry.item.text ?? '', ...(images.length > 0 ? { images } : {}) })
+      for (const photo of entry.photos) images.push(((await withRetry(() => call('stage-image', { mediaType: photo.mediaType, data: photo.data }))) as { id: string }).id)
+      // The same requestId on every attempt: the host answers a repeat without delivering twice.
+      await withRetry(() => call('send', { sessionId: entry.sessionId, requestId: entry.requestId, text: entry.item.text ?? '', ...(images.length > 0 ? { images } : {}) }))
       // What the chat already holds, so only a new row of the same text counts as this one.
       const kept = pages.get(key)
       const all = [...(kept?.older ?? []), ...(kept?.page.items ?? [])]
@@ -370,16 +372,16 @@ export function ChatView({ bot, room, header, onMissing }: { bot?: Bot; room?: R
       mark('sending', new Set(all.map((item, index) => keys[index])))
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
       if (key === latestKey.current) void latest.current(generation.current)
-    } catch (failure) {
+    } catch {
       mark('failed')
-      if (key === latestKey.current) setLoadError(failure instanceof Error ? failure.message : String(failure))
+      if (key === latestKey.current) setLoadError(t('The message was not sent. Check the connection, then tap it to retry.'))
     }
   }, [call])
   const latestKey = useRef(chatKey)
   latestKey.current = chatKey
   const send = async (text: string, photos: Photo[]) => {
     const localId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
-    const entry: Outgoing = { item: { kind: 'user', text, local: 'sending', localId, time: Date.now(), ...(photos.length > 0 ? { localImages: photos.map(photo => photo.uri) } : {}) }, photos, sessionId }
+    const entry: Outgoing = { item: { kind: 'user', text, local: 'sending', localId, time: Date.now(), ...(photos.length > 0 ? { localImages: photos.map(photo => photo.uri) } : {}) }, photos, sessionId, requestId: localId }
     setOutbox(chatKey, list => [...list, entry])
     // Once the new row is laid out, bring the latest messages into view.
     setTimeout(() => list.current?.scrollToOffset({ offset: 0, animated: true }), 60)

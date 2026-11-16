@@ -378,6 +378,24 @@ test('a phone stages photos one by one, then send puts them in one message with 
   await stop()
 })
 
+test('a retried send carries its requestId, so a dropped answer does not deliver twice', async () => {
+  const { call, sent, stop } = start()
+  const { chief } = await team(call)
+  const prompts = () => sent.filter(entry => entry.prompt !== undefined)
+  const before = prompts().length
+  assert.equal((await call('send', { sessionId: chief, text: 'hello', requestId: 'r-1' })).value, true)
+  assert.equal((await call('send', { sessionId: chief, text: 'hello', requestId: 'r-1' })).value, true)
+  assert.equal(prompts().length, before + 1)
+  // Another requestId is another message.
+  assert.equal((await call('send', { sessionId: chief, text: 'again', requestId: 'r-2' })).value, true)
+  assert.equal(prompts().length, before + 2)
+  // A refused send is not remembered, so the same requestId may still go out later.
+  assert.equal((await call('send', { sessionId: chief, text: '', requestId: 'r-3' })).error.code, 'bot/invalid')
+  assert.equal((await call('send', { sessionId: chief, text: 'now', requestId: 'r-3' })).value, true)
+  assert.equal(prompts().length, before + 3)
+  await stop()
+})
+
 test('chat with steps folds the turn tool calls into a steps row after its last text', async () => {
   const { call, history, stop } = start()
   const { chief } = await team(call)

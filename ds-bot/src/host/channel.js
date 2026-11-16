@@ -55,6 +55,9 @@ export function install(rt) {
 
   // Photos staged by `stage-image`, kept until the message that names them is sent.
   const staged = new Map()
+  // requestIds of sends this process already delivered. The phone retries a call whose
+  // answer it never saw (a dropped link), so a repeated requestId must not deliver twice.
+  const sentRequests = new Set()
   const ok = value => ({ ok: true, value })
   const fail = (message, code = 'bot/error') => ({ ok: false, error: { code, message, details: {} } })
   // Models come from DSH, not state.json, so a provider added on the Models pages of Settings
@@ -710,14 +713,31 @@ export function install(rt) {
           if ((text === '' && ids.length === 0) || typeof body.sessionId !== 'string') return fail('Nothing to send', 'bot/invalid')
           const images = ids.map(id => staged.get(id))
           if (images.some(entry => entry === undefined)) return fail('A photo did not arrive. Send it again.', 'bot/stale')
+          const requestId = typeof body.requestId === 'string' && body.requestId !== '' ? body.requestId : undefined
           await rt.load()
-          await rt.sendUser({
-            sessionId: body.sessionId,
-            content: [
-              ...(text === '' ? [] : [{ type: 'text', text }]),
-              ...images.map(({ mediaType, data }) => ({ type: 'image', mediaType, data })),
-            ],
-          })
+          // The phone retries a send whose answer it never saw; the same requestId is the
+          // same message. A refused send is not recorded, so a real retry still goes out.
+          if (requestId !== undefined) {
+            if (sentRequests.has(requestId)) {
+              for (const id of ids) staged.delete(id)
+              return ok(true)
+            }
+            sentRequests.add(requestId)
+            if (sentRequests.size > 200) sentRequests.delete(sentRequests.values().next().value)
+          }
+          try {
+            await rt.sendUser({
+              sessionId: body.sessionId,
+              ...(requestId === undefined ? {} : { requestId }),
+              content: [
+                ...(text === '' ? [] : [{ type: 'text', text }]),
+                ...images.map(({ mediaType, data }) => ({ type: 'image', mediaType, data })),
+              ],
+            })
+          } catch (error) {
+            if (requestId !== undefined) sentRequests.delete(requestId)
+            throw error
+          }
           for (const id of ids) staged.delete(id)
           return ok(true)
         }
