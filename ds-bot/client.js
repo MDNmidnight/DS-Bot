@@ -29294,7 +29294,7 @@ function Tip({ tip }) {
     "div",
     { className: "bt-usage-tip", style: { left: `${tip.x}px`, top: `${tip.y}px` }, role: "tooltip" },
     (0, import_react35.createElement)("div", { className: "bt-usage-tip-head" }, tip.title),
-    rows2.length === 0 ? (0, import_react35.createElement)("div", { className: "bt-usage-tip-reset" }, t("Usage unavailable")) : null,
+    rows2.length === 0 ? (0, import_react35.createElement)("div", { className: "bt-usage-tip-reset" }, tip.note === void 0 ? t("Usage unavailable") : `${t("Usage unavailable")} · ${tip.note}`) : null,
     rows2.map((row) => (0, import_react35.createElement)(
       "div",
       { key: row.id, className: "bt-usage-tip-item" },
@@ -29318,8 +29318,13 @@ function usePlanUsage() {
   (0, import_react35.useEffect)(() => {
     let live = true;
     const load = async () => {
-      const [codex, opencode] = await Promise.all([readCodex(), readOpencode()]);
-      if (live) setPayload({ ...codex === void 0 ? {} : { codex }, ...opencode === void 0 ? {} : { opencode } });
+      const [answer, opencode] = await Promise.all([readCodex(), readOpencode()]);
+      if (!live) return;
+      setPayload({
+        ...answer?.codex === void 0 || answer?.codex === null ? {} : { codex: answer.codex },
+        ...typeof answer?.reason === "string" ? { codexReason: answer.reason } : {},
+        ...opencode === void 0 ? {} : { opencode }
+      });
     };
     void load();
     const timer = setInterval(() => void load(), REFRESH_MS);
@@ -29352,9 +29357,9 @@ async function readOpencode() {
 }
 function useTip() {
   const [tip, setTip] = (0, import_react35.useState)(null);
-  const show2 = (title, rows2) => (event) => {
+  const show2 = (title, rows2, note) => (event) => {
     const box = event.currentTarget.getBoundingClientRect();
-    setTip({ x: Math.round(box.right + 10), y: Math.round(box.top - 4), title, rows: rows2 });
+    setTip({ x: Math.round(box.right + 10), y: Math.round(box.top - 4), title, rows: rows2, note });
   };
   const hide = () => setTip(null);
   return { tip, show: show2, hide };
@@ -29386,7 +29391,7 @@ function PlanUsage({ layout }) {
   }).join(" · ");
   const codexMark = (0, import_react35.createElement)(
     "div",
-    { className: "bt-usage-mark", onMouseEnter: show2("Codex", codexRows), onMouseLeave: hide, tabIndex: 0, "aria-label": t("Codex usage") },
+    { className: "bt-usage-mark", onMouseEnter: show2("Codex", codexRows, payload.codexReason), onMouseLeave: hide, tabIndex: 0, "aria-label": t("Codex usage") },
     (0, import_react35.createElement)(Ring, { size: style.size, radius: style.codexRadius, percent: codex?.percent, color: CODEX_COLOR, stroke: style.codexStroke }),
     rail ? null : (0, import_react35.createElement)("span", { className: "bt-usage-text" }, (0, import_react35.createElement)("span", { className: "bt-usage-name" }, "Codex"), (0, import_react35.createElement)("span", { className: "bt-usage-detail" }, codexDetail))
   );

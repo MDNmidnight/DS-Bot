@@ -7,13 +7,33 @@
 // desktop app uses, it loads no thread, and the result is cached so the sidebar's
 // refresh never turns into a spawn per minute.
 import { execFileSync, spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 const CACHE_MS = 5 * 60_000
 const RETRY_MS = 60_000
-const REQUEST_TIMEOUT_MS = 15_000
+const REQUEST_TIMEOUT_MS = 25_000
 const WEEK_MINUTES = 10080
+
+// The Store package keeps the executable under a versioned folder; the desktop app's
+// install is the fallback when the command is not on PATH (the desktop bridge's own
+// lookup, plus a direct read of the package folder for hosts where PowerShell is slow
+// or unavailable).
+function storePackageCodex() {
+  const root = process.env.ProgramFiles === undefined ? 'C:\\Program Files' : process.env.ProgramFiles
+  for (const dir of [join(root, 'WindowsApps'), join(process.env.LOCALAPPDATA ?? '', 'Microsoft', 'WindowsApps')]) {
+    const alias = join(dir, 'codex.exe')
+    if (existsSync(alias)) return alias
+    try {
+      const packages = readdirSync(dir).filter(name => name.startsWith('OpenAI.Codex_')).sort().reverse()
+      for (const name of packages) {
+        const exe = join(dir, name, 'app', 'resources', 'codex.exe')
+        if (existsSync(exe)) return exe
+      }
+    } catch { /* the folder is not listable or does not exist */ }
+  }
+  return undefined
+}
 
 // Read the Codex executable the same way the desktop bridge does: PATH first, then the
 // Microsoft Store package the desktop app installs from.
@@ -25,6 +45,8 @@ export function locateCodex(configured) {
       if (found !== '' && existsSync(found)) return found
     } catch { /* not on PATH */ }
   }
+  const direct = storePackageCodex()
+  if (direct !== undefined) return direct
   try {
     const root = execFileSync('powershell.exe', [
       '-NoProfile', '-NonInteractive', '-Command',

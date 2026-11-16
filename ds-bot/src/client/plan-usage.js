@@ -94,7 +94,7 @@ function Tip({ tip }) {
   const rows = tip.rows
   return h('div', { className: 'bt-usage-tip', style: { left: `${tip.x}px`, top: `${tip.y}px` }, role: 'tooltip' },
     h('div', { className: 'bt-usage-tip-head' }, tip.title),
-    rows.length === 0 ? h('div', { className: 'bt-usage-tip-reset' }, t('Usage unavailable')) : null,
+    rows.length === 0 ? h('div', { className: 'bt-usage-tip-reset' }, tip.note === undefined ? t('Usage unavailable') : `${t('Usage unavailable')} · ${tip.note}`) : null,
     rows.map(row => h('div', { key: row.id, className: 'bt-usage-tip-item' },
       h('div', { className: 'bt-usage-tip-row' },
         h('span', { className: 'bt-usage-tip-window' }, row.window),
@@ -109,8 +109,13 @@ function usePlanUsage() {
   useEffect(() => {
     let live = true
     const load = async () => {
-      const [codex, opencode] = await Promise.all([readCodex(), readOpencode()])
-      if (live) setPayload({ ...(codex === undefined ? {} : { codex }), ...(opencode === undefined ? {} : { opencode }) })
+      const [answer, opencode] = await Promise.all([readCodex(), readOpencode()])
+      if (!live) return
+      setPayload({
+        ...(answer?.codex === undefined || answer?.codex === null ? {} : { codex: answer.codex }),
+        ...(typeof answer?.reason === 'string' ? { codexReason: answer.reason } : {}),
+        ...(opencode === undefined ? {} : { opencode }),
+      })
     }
     void load()
     const timer = setInterval(() => void load(), REFRESH_MS)
@@ -149,9 +154,9 @@ async function readOpencode() {
 // windows.
 function useTip() {
   const [tip, setTip] = useState(null)
-  const show = (title, rows) => event => {
+  const show = (title, rows, note) => event => {
     const box = event.currentTarget.getBoundingClientRect()
-    setTip({ x: Math.round(box.right + 10), y: Math.round(box.top - 4), title, rows })
+    setTip({ x: Math.round(box.right + 10), y: Math.round(box.top - 4), title, rows, note })
   }
   const hide = () => setTip(null)
   return { tip, show, hide }
@@ -180,7 +185,7 @@ export function PlanUsage({ layout }) {
     const label = key === 'rolling' ? (payload.opencode?.rollingWindow ?? '5h') : key === 'weekly' ? t('Weekly') : t('Monthly')
     return `${label} ${percentText(percents[index])}`
   }).join(' · ')
-  const codexMark = h('div', { className: 'bt-usage-mark', onMouseEnter: show('Codex', codexRows), onMouseLeave: hide, tabIndex: 0, 'aria-label': t('Codex usage') },
+  const codexMark = h('div', { className: 'bt-usage-mark', onMouseEnter: show('Codex', codexRows, payload.codexReason), onMouseLeave: hide, tabIndex: 0, 'aria-label': t('Codex usage') },
     h(Ring, { size: style.size, radius: style.codexRadius, percent: codex?.percent, color: CODEX_COLOR, stroke: style.codexStroke }),
     rail ? null : h('span', { className: 'bt-usage-text' }, h('span', { className: 'bt-usage-name' }, 'Codex'), h('span', { className: 'bt-usage-detail' }, codexDetail)))
   const showOpencode = rail || payload.opencode !== undefined
